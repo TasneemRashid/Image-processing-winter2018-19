@@ -17,10 +17,10 @@ plt.yticks([])
 ####################################################################
 def img_converter(img,rmin,rmax):
     newImg = np.copy(img)
-    for i in range(img.shape[0]):
-        for j in range(img.shape[1]):
+    for i in range(clock.shape[0]):
+        for j in range(clock.shape[1]):
             a = np.array((i,j))
-            b = np.array((img.shape[0]/2,img.shape[1]/2))
+            b = np.array((clock.shape[0]/2,clock.shape[1]/2))
             if rmin <= np.linalg.norm(a-b) <= rmax:
                 newImg[i][j] = 0
     return newImg
