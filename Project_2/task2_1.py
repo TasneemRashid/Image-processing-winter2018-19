@@ -137,7 +137,7 @@ def g_sci(mask):
 #Calculate runtime for OpenCV implementation
 arrayOne = []    
 for i in [3,5,9,15,23]:  
-    t = timeit.Timer(functools.partial(cv2GaussianBlur, i)).repeat(1, 1000)
+    t = timeit.Timer(functools.partial(cv2GaussianBlur, i)).repeat(10, 1000)
     t = np.array(t)
     arrayOne = np.append(arrayOne,np.mean(t))
     
@@ -146,7 +146,7 @@ y = np.array([3, 5, 9, 15, 23])
 #Calculate for SciPy Implementation
 arrayTwo = []
 for i in [3,5,9,15,23]:
-    t = timeit.Timer(functools.partial(g_sci, i)).repeat(1, 1000)
+    t = timeit.Timer(functools.partial(g_sci, i)).repeat(10, 1000)
     t = np.array(t)
     arrayTwo = np.append(arrayTwo,np.mean(t))
 
