@@ -47,9 +47,8 @@ def coefficients(standard_deviation):
 def causal_filter(image, coefficients):
     """ we use image, as for x but 3 elements should be concatenated to the
     beginning of the image array to prevent negative indexing """
-    img = 3*[1]+image
     # initializing y to recursively/ gradually fill it in
-    y = [0 for item in range(len(img))]
+    y = np.zeros((img.shape[0],img.shape[1]), dtype=float)
     y[3] = coefficients[0]*img[0]
     for i in range(len(img)):
         """ in the original formula we consider the frist summation result
@@ -70,13 +69,82 @@ def causal_filter(image, coefficients):
 
 # building the anti-causal part of the main recursive Gaussian filter
 
+def anti_causal_filter(image, coefficients):
+    y = np.zeros((img.shape[0],img.shape[1]), dtype=float)
+    y[4] = coefficients[0]*img[0]
+    for i in range(len(img)):
+        """ in the original formula we consider the frist summation result
+        as zigma_1 and the second as zigma_2 """
+        zigma_1 = 0
+        zigma_2 = 0
+
+        if (i in range(len(img)-4,len(img))):
+            continue
+        for j in range(1, 5):
+            zigma_1 = zigma_1+coefficients[j+7]*img[i+j]
+        for j in range(1, 5):
+            zigma_2 = zigma_2+coefficients[3+j]*y[i+j]
+        y[i] = zigma_1-zigma_2
+
+    return y
+    
+    
+    
+
 """ combining the causal and anti-causal parts to finally have the filter and
 normalizing the output"""
 
+def final_filter (sigma, causal, antiCausal):
+    y = np.zeros((img.shape[0],img.shape[1]), dtype=float)
+    for i in range(causal.shape[0]):
+        for j in range(causal.shape[1]):
+            y[i][j] = (causal[i][j] + antiCausal[i][j])/(sigma * np.sqrt(2 * np.pi))
+    
+    return y
 
 """ experimenting the application of different valuses for parameter (sigma)
 with our approach """
 
+for sd in range(1,10):
+    standardDeviation = sd
+    coeffs = coefficients (standardDeviation)
+    causal = causal_filter(img, coeffs)
+    anti_causal = anti_causal_filter(img,coeffs)
+    final = final_filter(standardDeviation,causal,anti_causal)
+
+    plt.subplot(1, 2, 1)
+    plt.imshow(img, cmap='gray', interpolation='nearest') 
+    plt.title('Original image')
+    plt.xticks([])
+    plt.yticks([])
+
+    plt.subplot(1, 2, 2)
+    plt.imshow(final, cmap='gray', interpolation='nearest') 
+    plt.title('Filtered image')
+    plt.xticks([])
+    plt.yticks([])
+    plt.show()
 
 """ experimenting the application of different valuses for parameter (sigma)
 with the built-in function """
+
+from scipy.ndimage.filters import gaussian_filter
+
+print('-------------------------------------')
+for sd in range(1,10):
+    
+    final = gaussian_filter(img,sd)
+
+    plt.subplot(1, 2, 1)
+    plt.imshow(img, cmap='gray', interpolation='nearest') 
+    plt.title('Original image')
+    plt.xticks([])
+    plt.yticks([])
+
+    plt.subplot(1, 2, 2)
+    plt.imshow(final, cmap='gray', interpolation='nearest') 
+    plt.title('Filtered image')
+    plt.xticks([])
+    plt.yticks([])
+    plt.show()
+
