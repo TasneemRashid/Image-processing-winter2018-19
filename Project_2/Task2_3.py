@@ -2,12 +2,12 @@ import numpy as np
 import scipy as sc
 import matplotlib.pyplot as plt
 
-# reading an intensity image
-img = plt.imread('./resources/bauckhage.jpg')
+# reshaping the list to prepare it for depicting
+def reshape_img(list_img):
+    return np.reshape(np.asarray(list_img), (256, -1))
+
 
 # calculate the coefficients <standard_deviation = sigma>
-
-
 def coefficients(standard_deviation):
     # we can also replace standard_deviation with "sigma" to make it short!
     # considering input values from Project definition
@@ -22,7 +22,7 @@ def coefficients(standard_deviation):
 
     pos_a2 = 2*np.exp(-1*(coefs['landa1']+coefs['landa2'])/standard_deviation)*((coefs['alpha1']+coefs['alpha2']) * np.cos(coefs['omega2']/standard_deviation)*np.cos(coefs['omega1']/standard_deviation)-np.cos(coefs['omega2']/standard_deviation)*coefs['beta1']*np.sin(coefs['omega1']/standard_deviation)-np.cos(coefs['omega1']/standard_deviation)*coefs['beta2']*np.sin(coefs['omega2']/standard_deviation))+coefs['alpha2']*np.exp(-2*(coefs['landa1'])/standard_deviation)+coefs['alpha1']*np.exp(-2*(coefs['landa2'])/standard_deviation)
 
-    pos_a3 = np.exp(-1*(coefs['landa2']+2*coefs['landa1'])/standard_deviation)*(coefs['beta2']*np.sin(coefs['omega2']/standard_deviation)-coefs['alpha1']*np.cos(coefs['omega2']/standard_deviation))+np.exp(-1*(coefs['landa1']+2*coefs['landa2'])/standard_deviation)*(coefs['beta1']*np.sin(coefs['omega1']/standard_deviation)-coefs['alpha1']*np.cos(coefs['omega1']/standard_deviation))
+    pos_a3 = np.exp(-1*(coefs['landa2']+2*coefs['landa1'])/standard_deviation)*(coefs['beta2']*np.sin(coefs['omega2']/standard_deviation)-coefs['alpha2']*np.cos(coefs['omega2']/standard_deviation))+np.exp(-1*(coefs['landa1']+2*coefs['landa2'])/standard_deviation)*(coefs['beta1']*np.sin(coefs['omega1']/standard_deviation)-coefs['alpha1']*np.cos(coefs['omega1']/standard_deviation))
 
     b1 = (-2)*np.exp(-coefs['landa2']/standard_deviation)*np.cos(coefs['omega2']/standard_deviation)-(2)*np.exp(-coefs['landa1']/standard_deviation)*np.cos(coefs['omega1']/standard_deviation)
 
@@ -45,82 +45,100 @@ def coefficients(standard_deviation):
 
 
 def causal_filter(image, coefficients):
-    """ we use image, as for x but 3 elements should be concatenated to the
-    beginning of the image array to prevent negative indexing """
+    """ 1) we use image (as a one-dimensional array), as for x but 3 elements
+          should be concatenated to the beginning of the image array to prevent negative
+          indexing.
+        2) like mentioned in the task we flatten the image array to work on a
+            1-d array"""
+
+    image = image.flatten()
+    img = 3*[0]+image.tolist()
     # initializing y to recursively/ gradually fill it in
-    y = np.zeros((img.shape[0],img.shape[1]), dtype=float)
+    y = [0 for item in range(len(img))]
     y[3] = coefficients[0]*img[0]
-    for i in range(len(img)):
+    for n in range(4, len(img)):
         """ in the original formula we consider the frist summation result
         as zigma_1 and the second as zigma_2 """
         zigma_1 = 0
         zigma_2 = 0
 
-        if (i in range(4)):
-            continue
-        for j in range(4):
-            zigma_1 = zigma_1+coefficients[j]*img[i-j]
-        for j in range(1, 5):
-            zigma_2 = zigma_2+coefficients[3+j]*y[i-j]
-        y[i] = zigma_1-zigma_2
+        # if (i in range(4)):
+        #     continue
+        for m in range(4):
+            zigma_1 = zigma_1+coefficients[m]*img[n-m]
+        for m in range(1, 5):
+            zigma_2 = zigma_2+coefficients[3+m]*y[n-m]
+        y[n] = zigma_1-zigma_2
 
-    return y
+    return y[3:]
 
 
 # building the anti-causal part of the main recursive Gaussian filter
 
 def anti_causal_filter(image, coefficients):
-    y = np.zeros((img.shape[0],img.shape[1]), dtype=float)
-    y[4] = coefficients[0]*img[0]
-    for i in range(len(img)):
+    image = image.flatten()
+    img = image.tolist()+3*[0]
+
+    y = [0 for item in range(len(img))]
+    # calculating the last element to initaite the recursive equation
+    y[len(img)-5] = coefficients[8]*img[len(img)-4]
+
+    # current elements depend on next elements! so we fill the list from end to the beginning
+    for n in reversed(range(0, len(img)-6)):
         """ in the original formula we consider the frist summation result
         as zigma_1 and the second as zigma_2 """
         zigma_1 = 0
         zigma_2 = 0
 
-        if (i in range(len(img)-4,len(img))):
-            continue
-        for j in range(1, 5):
-            zigma_1 = zigma_1+coefficients[j+7]*img[i+j]
-        for j in range(1, 5):
-            zigma_2 = zigma_2+coefficients[3+j]*y[i+j]
-        y[i] = zigma_1-zigma_2
+        # if (n in range(len(img)-4,len(img))):
+        #     continue
+        for m in range(1, 5):
+            zigma_1 = zigma_1+coefficients[m+7]*img[n+m]
+        for m in range(1, 5):
+            zigma_2 = zigma_2+coefficients[3+m]*y[n+m]
+        y[n] = zigma_1-zigma_2
 
-    return y
-    
-    
-    
+    return y[:len(y)-3]
+
+
 
 """ combining the causal and anti-causal parts to finally have the filter and
 normalizing the output"""
 
-def final_filter (sigma, causal, antiCausal):
-    y = np.zeros((img.shape[0],img.shape[1]), dtype=float)
-    for i in range(causal.shape[0]):
-        for j in range(causal.shape[1]):
-            y[i][j] = (causal[i][j] + antiCausal[i][j])/(sigma * np.sqrt(2 * np.pi))
-    
+def final_filter(sigma, causal, antiCausal):
+    y = []
+    img_length = len(causal)
+    for n in range(0, img_length):
+            y.append((causal[n] + antiCausal[n])/(sigma * np.sqrt(2 * np.pi)))
+
+    # as of the last part, it's time to normalize after applying the Gaussian distribution
+    max_value = max(y)
+    min_value = min(y)
+    for n in range(0, img_length):
+        y[n] = 255*(y[n]-min_value)/(max_value-min_value)
+
     return y
 
 """ experimenting the application of different valuses for parameter (sigma)
 with our approach """
 
-for sd in range(1,10):
-    standardDeviation = sd
-    coeffs = coefficients (standardDeviation)
-    causal = causal_filter(img, coeffs)
-    anti_causal = anti_causal_filter(img,coeffs)
-    final = final_filter(standardDeviation,causal,anti_causal)
+org_img = plt.imread('./resources/bauckhage.jpg')
+
+for standardDeviation in range(1, 10):
+    coeffs = coefficients(standardDeviation)
+    causal = causal_filter(org_img, coeffs)
+    anti_causal = anti_causal_filter(org_img, coeffs)
+    final = final_filter(standardDeviation, causal, anti_causal)
 
     plt.subplot(1, 2, 1)
-    plt.imshow(img, cmap='gray', interpolation='nearest') 
+    plt.imshow(org_img, cmap='gray', interpolation='nearest')
     plt.title('Original image')
     plt.xticks([])
     plt.yticks([])
 
     plt.subplot(1, 2, 2)
-    plt.imshow(final, cmap='gray', interpolation='nearest') 
-    plt.title('Filtered image')
+    plt.imshow(reshape_img(final), cmap='gray', interpolation='nearest')
+    plt.title('Filtered image-Our version')
     plt.xticks([])
     plt.yticks([])
     plt.show()
@@ -132,19 +150,18 @@ from scipy.ndimage.filters import gaussian_filter
 
 print('-------------------------------------')
 for sd in range(1,10):
-    
-    final = gaussian_filter(img,sd)
+
+    final = gaussian_filter(org_img,sd)
 
     plt.subplot(1, 2, 1)
-    plt.imshow(img, cmap='gray', interpolation='nearest') 
+    plt.imshow(org_img, cmap='gray', interpolation='nearest')
     plt.title('Original image')
     plt.xticks([])
     plt.yticks([])
 
     plt.subplot(1, 2, 2)
-    plt.imshow(final, cmap='gray', interpolation='nearest') 
-    plt.title('Filtered image')
+    plt.imshow(final, cmap='gray', interpolation='nearest')
+    plt.title('Filtered image-Built in')
     plt.xticks([])
     plt.yticks([])
     plt.show()
-
