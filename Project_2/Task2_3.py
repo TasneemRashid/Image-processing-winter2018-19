@@ -1,6 +1,10 @@
 import numpy as np
-import scipy as sc
+import time
 import matplotlib.pyplot as plt
+from scipy.ndimage.filters import gaussian_filter
+
+built_in_average_time = []
+costum_average_time = []
 
 # reshaping the list to prepare it for depicting
 def reshape_img(list_img):
@@ -119,49 +123,46 @@ def final_filter(sigma, causal, antiCausal):
 
     return y
 
-""" experimenting the application of different valuses for parameter (sigma)
-with our approach """
 
 org_img = plt.imread('./resources/bauckhage.jpg')
+#org_img = plt.imread('./resources/clock.jpg')
 
-for standardDeviation in range(1, 10):
+for standardDeviation in range(1,10):
+    
+    """ experimenting the application of different valuses for parameter (sigma)
+    with our approach """
+    
+    start_time = time.time()
     coeffs = coefficients(standardDeviation)
     causal = causal_filter(org_img, coeffs)
     anti_causal = anti_causal_filter(org_img, coeffs)
-    final = final_filter(standardDeviation, causal, anti_causal)
+    final_custom = final_filter(standardDeviation, causal, anti_causal)
+    end_time = time.time()
+    costum_average_time.append(end_time-start_time)
+    
+    """ experimenting the application of different valuses for parameter (sigma)
+    with the built-in function """
+    
+    start_time = time.time()
+    final_builtIn = gaussian_filter(org_img,standardDeviation)
+    end_time = time.time()
+    built_in_average_time.append(end_time-start_time)
 
     plt.subplot(1, 2, 1)
-    plt.imshow(org_img, cmap='gray', interpolation='nearest')
-    plt.title('Original image')
+    plt.imshow(final_builtIn, cmap='gray', interpolation='nearest')
+    plt.title('Filtered image-Built in')
     plt.xticks([])
     plt.yticks([])
 
     plt.subplot(1, 2, 2)
-    plt.imshow(reshape_img(final), cmap='gray', interpolation='nearest')
+    plt.imshow(reshape_img(final_custom), cmap='gray', interpolation='nearest')
     plt.title('Filtered image-Our version')
     plt.xticks([])
     plt.yticks([])
     plt.show()
+    print()
 
-""" experimenting the application of different valuses for parameter (sigma)
-with the built-in function """
 
-from scipy.ndimage.filters import gaussian_filter
 
-print('-------------------------------------')
-for sd in range(1,10):
-
-    final = gaussian_filter(org_img,sd)
-
-    plt.subplot(1, 2, 1)
-    plt.imshow(org_img, cmap='gray', interpolation='nearest')
-    plt.title('Original image')
-    plt.xticks([])
-    plt.yticks([])
-
-    plt.subplot(1, 2, 2)
-    plt.imshow(final, cmap='gray', interpolation='nearest')
-    plt.title('Filtered image-Built in')
-    plt.xticks([])
-    plt.yticks([])
-    plt.show()
+print('Average time of our implementation: ', sum(costum_average_time)/float(len(costum_average_time)))
+print('Average time of built-in function: ', sum(built_in_average_time)/float(len(built_in_average_time)))
