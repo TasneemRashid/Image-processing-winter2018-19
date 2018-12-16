@@ -43,10 +43,23 @@ def bilateral_filtering(source_image, filter_diameter, rho, sigma):
     return filtered_image
 
 
+#Bilateral Filtering for the first image#
+source_image = cv2.imread('./resources/bauckhage.jpg', 0)                                      #read the image
+# check for different variations of rho and sigma
+filtered_image_custom = bilateral_filtering(source_image,5, 10.0, 1.5)                         #filter the image with custom code
+cv2.imwrite("filtered_bauckhage_1.jpg", filtered_image_custom)                                 #Get the new filtered image
+filtered_image_custom = bilateral_filtering(source_image,5, 100.0, 1.5)                        #filter the image with custom code
+cv2.imwrite("filtered_bauckhage_2.jpg", filtered_image_custom)                                 #Get the new filtered image
+filtered_image_custom = bilateral_filtering(source_image,5, 130.0, 10.0)                       #filter the image with custom code
+cv2.imwrite("filtered_bauckhage_3.jpg", filtered_image_custom)                                 #Get the new filtered image
 
-source_image = cv2.imread('./resources/bauckhage.jpg', 0)                                        #read the image
-filtered_image_OpenCV = cv2.bilateralFilter(source_image, 15, 100.0, 10.0)           #filter the image with CV2
-cv2.imwrite("filtered_image_opencv.jpg", filtered_image_OpenCV)                      #Get the filtered image
-filtered_image_custom = bilateral_filtering(source_image,15, 100.0, 10.0)            #filter the image with custom code
-cv2.imwrite("filtered_image_custom.jpg", filtered_image_custom)                      #Get the new filtered image
 
+#Bilateral Filtering for the second image#
+source_image = cv2.imread('./resources/clock.jpg', 0)                                          #read the image
+# check for different variations of rho and sigma
+filtered_image_custom = bilateral_filtering(source_image,5, 10.0, 1.5)                         #filter the image with custom code
+cv2.imwrite("filtered_clock_1.jpg", filtered_image_custom)                                     #Get the new filtered image
+filtered_image_custom = bilateral_filtering(source_image,5, 100.0, 1.5)                        #filter the image with custom code
+cv2.imwrite("filtered_clock_2.jpg", filtered_image_custom)                                     #Get the new filtered image
+filtered_image_custom = bilateral_filtering(source_image,5, 130.0, 10.0)                       #filter the image with custom code
+cv2.imwrite("filtered_clock_3.jpg", filtered_image_custom)                                     #Get the new filtered image
