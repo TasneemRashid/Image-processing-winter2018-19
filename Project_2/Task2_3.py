@@ -6,9 +6,12 @@ from scipy.ndimage.filters import gaussian_filter
 built_in_average_time = []
 costum_average_time = []
 
-# reshaping the list to prepare it for depicting
-def reshape_img(list_img):
-    return np.reshape(np.asarray(list_img), (256, -1))
+org_img = plt.imread('./resources/bauckhage.jpg')
+#org_img = plt.imread('./resources/clock.jpg')
+img = np.zeros((org_img.shape[0]+8,org_img.shape[1]+8),dtype = float)
+for i in range(4,img.shape[0]-4):
+    for j in range(4,img.shape[1]-4):
+        img[i][j] = org_img[i-4][j-4]
 
 
 # calculate the coefficients <standard_deviation = sigma>
@@ -46,103 +49,268 @@ def coefficients(standard_deviation):
 
 
 # building the causal part of the main recursive Gaussian filter
+def causal_filter_row_based(img, coefficients):
+    # initializing y to recursively/ gradually fill it in
+    y = np.zeros((img.shape[0],img.shape[1]),dtype = float)
 
+    #row-wise causal
+    for row in range(y.shape[0]):
+        y[row][3] = coefficients[0]*img[row][3]
+        for n in range(4, len(img[row])):
+            """ in the original formula we consider the frist summation result
+            as zigma_1 and the second as zigma_2 """
+            zigma_1 = 0
+            zigma_2 = 0
 
-def causal_filter(image, coefficients):
+            for m in range(4):
+                zigma_1 = zigma_1+coefficients[m]*img[row][n-m]
+            for m in range(1, 5):
+                zigma_2 = zigma_2+coefficients[3+m]*y[row][n-m]
+            y[row][n] = zigma_1-zigma_2
+
+    return y
+
+def causal_filter_col_based(img, coefficients):
+    #column-wise causal
+    y = np.zeros((img.shape[0],img.shape[1]),dtype = float)
+    for col in range(y.shape[1]):
+        y[3][col] = coefficients[0]*img[3][col]
+        for n in range(4, len(img[col])):
+            """ in the original formula we consider the frist summation result
+            as zigma_1 and the second as zigma_2 """
+            zigma_1 = 0
+            zigma_2 = 0
+
+            for m in range(4):
+                zigma_1 = zigma_1+coefficients[m]*img[n-m][col]
+            for m in range(1, 5):
+                zigma_2 = zigma_2+coefficients[3+m]*y[n-m][col]
+            y[n][col] = zigma_1-zigma_2
+    return y
+
+def causal_filter(img, coefficients):
     """ 1) we use image (as a one-dimensional array), as for x but 3 elements
           should be concatenated to the beginning of the image array to prevent negative
           indexing.
         2) like mentioned in the task we flatten the image array to work on a
             1-d array"""
+    y = causal_filter_row_based(img, coefficients)
+    plt.imshow(y, cmap='gray', interpolation='nearest')
+    plt.show()
+    y = causal_filter_col_based(y, coefficients)
+    plt.imshow(y, cmap='gray', interpolation='nearest')
+    plt.show()
+    return y
 
-    image = image.flatten()
-    img = 3*[0]+image.tolist()
-    # initializing y to recursively/ gradually fill it in
-    y = [0 for item in range(len(img))]
-    y[3] = coefficients[0]*img[0]
-    for n in range(4, len(img)):
-        """ in the original formula we consider the frist summation result
-        as zigma_1 and the second as zigma_2 """
-        zigma_1 = 0
-        zigma_2 = 0
-
-        # if (i in range(4)):
-        #     continue
-        for m in range(4):
-            zigma_1 = zigma_1+coefficients[m]*img[n-m]
-        for m in range(1, 5):
-            zigma_2 = zigma_2+coefficients[3+m]*y[n-m]
-        y[n] = zigma_1-zigma_2
-
-    return y[3:]
+    # # initializing y to recursively/ gradually fill it in
+    # y = np.zeros((img.shape[0],img.shape[1]),dtype = float)
+    #
+    # #row-wise causal
+    # for row in range(y.shape[0]):
+    #
+    #     y[row][3] = coefficients[0]*img[row][3]
+    #
+    #     for n in range(4, len(img[row])):
+    #         """ in the original formula we consider the frist summation result
+    #         as zigma_1 and the second as zigma_2 """
+    #         zigma_1 = 0
+    #         zigma_2 = 0
+    #
+    #         # if (i in range(4)):
+    #         #     continue
+    #         for m in range(4):
+    #             zigma_1 = zigma_1+coefficients[m]*img[row][n-m]
+    #         for m in range(1, 5):
+    #             zigma_2 = zigma_2+coefficients[3+m]*y[row][n-m]
+    #         y[row][n] = zigma_1-zigma_2
+    #
+    # plt.imshow(y, cmap='gray', interpolation='nearest')
+    # plt.show()
+    #
+    # #column-wise causal
+    # z = np.zeros((y.shape[0],y.shape[1]),dtype = float)
+    # for col in range(z.shape[1]):
+    #
+    #     z[3][col] = coefficients[0]*y[3][col]
+    #
+    #     for n in range(4, len(y[col])):
+    #         """ in the original formula we consider the frist summation result
+    #         as zigma_1 and the second as zigma_2 """
+    #         zigma_1 = 0
+    #         zigma_2 = 0
+    #
+    #         # if (i in range(4)):
+    #         #     continue
+    #         for m in range(4):
+    #             zigma_1 = zigma_1+coefficients[m]*y[n-m][col]
+    #         for m in range(1, 5):
+    #             zigma_2 = zigma_2+coefficients[3+m]*z[n-m][col]
+    #         z[n][col] = zigma_1-zigma_2
+    #
+    # plt.imshow(z, cmap='gray', interpolation='nearest')
+    # plt.show()
+    # return z
 
 
 # building the anti-causal part of the main recursive Gaussian filter
+def anti_causal_filter_row_based(img, coefficients):
+    #row-wise anti-causal
+    y = np.zeros((img.shape[0],img.shape[1]),dtype = float)
+    for row in range(y.shape[0]):
+        # calculating the last element to initaite the recursive equation
+        y[row][len(img)-6] = coefficients[8]*img[row][len(img)-5]
+        # current elements depend on next elements! so we fill the list from end to the beginning
+        for n in reversed(range(0, len(img[row])-6)):
+            """ in the original formula we consider the frist summation result
+            as zigma_1 and the second as zigma_2 """
+            zigma_1 = 0
+            zigma_2 = 0
 
-def anti_causal_filter(image, coefficients):
-    image = image.flatten()
-    img = image.tolist()+3*[0]
+            for m in range(1, 5):
+                zigma_1 = zigma_1+coefficients[m+7]*img[row][n+m]
+            for m in range(1, 5):
+                zigma_2 = zigma_2+coefficients[3+m]*y[row][n+m]
+            y[row][n] = zigma_1-zigma_2
+    return y
 
-    y = [0 for item in range(len(img))]
-    # calculating the last element to initaite the recursive equation
-    y[len(img)-5] = coefficients[8]*img[len(img)-4]
+def anti_causal_filter_col_based(img, coefficients):
+    # initializing y to recursively/ gradually fill it in
+     y = np.zeros((img.shape[0],img.shape[1]),dtype = float)
+     #column-wise anti-causal
+     for col in range(y.shape[1]):
+         # calculating the last element to initaite the recursive equation
+         y[len(img)-6][col] = coefficients[8]*img[len(img)-5][col]
+         # current elements depend on next elements! so we fill the list from end to the beginning
+         for n in reversed(range(0, len(img[col])-6)):
+             """ in the original formula we consider the frist summation result
+             as zigma_1 and the second as zigma_2 """
+             zigma_1 = 0
+             zigma_2 = 0
 
-    # current elements depend on next elements! so we fill the list from end to the beginning
-    for n in reversed(range(0, len(img)-6)):
-        """ in the original formula we consider the frist summation result
-        as zigma_1 and the second as zigma_2 """
-        zigma_1 = 0
-        zigma_2 = 0
+             for m in range(1, 5):
+                 zigma_1 = zigma_1+coefficients[m+7]*img[n+m][col]
+             for m in range(1, 5):
+                 zigma_2 = zigma_2+coefficients[3+m]*y[n+m][col]
+             y[n][col] = zigma_1-zigma_2
+     return y
 
-        # if (n in range(len(img)-4,len(img))):
-        #     continue
-        for m in range(1, 5):
-            zigma_1 = zigma_1+coefficients[m+7]*img[n+m]
-        for m in range(1, 5):
-            zigma_2 = zigma_2+coefficients[3+m]*y[n+m]
-        y[n] = zigma_1-zigma_2
+def anti_causal_filter(img, coefficients):
 
-    return y[:len(y)-3]
-
+    y = anti_causal_filter_row_based(img, coefficients)
+    plt.imshow(y, cmap='gray', interpolation='nearest')
+    plt.show()
+    y = anti_causal_filter_col_based(y, coefficients)
+    plt.imshow(y, cmap='gray', interpolation='nearest')
+    plt.show()
+    return y
+    # initializing y to recursively/ gradually fill it in
+    #  y = np.zeros((img.shape[0],img.shape[1]),dtype = float)
+     #
+    #  #column-wise anti-causal
+    #  for col in range(y.shape[1]):
+     #
+     #
+    #      # calculating the last element to initaite the recursive equation
+    #      y[len(img)-6][col] = coefficients[8]*img[len(img)-5][col]
+     #
+    #      # current elements depend on next elements! so we fill the list from end to the beginning
+    #      for n in reversed(range(0, len(img[col])-6)):
+    #          """ in the original formula we consider the frist summation result
+    #          as zigma_1 and the second as zigma_2 """
+    #          zigma_1 = 0
+    #          zigma_2 = 0
+     #
+    #          # if (n in range(len(img)-4,len(img))):
+    #          #     continue
+    #          for m in range(1, 5):
+    #              zigma_1 = zigma_1+coefficients[m+7]*img[n+m][col]
+    #          for m in range(1, 5):
+    #              zigma_2 = zigma_2+coefficients[3+m]*y[n+m][col]
+    #          y[n][col] = zigma_1-zigma_2
+     #
+    #  plt.imshow(y, cmap='gray', interpolation='nearest')
+    #  plt.show()
+     #
+    #  #row-wise anti-causal
+    #  z = np.zeros((y.shape[0],y.shape[1]),dtype = float)
+    #  for row in range(z.shape[0]):
+     #
+    #      # calculating the last element to initaite the recursive equation
+    #      z[row][len(y)-6] = coefficients[8]*y[row][len(y)-5]
+     #
+    #      # current elements depend on next elements! so we fill the list from end to the beginning
+    #      for n in reversed(range(0, len(y[row])-6)):
+    #          """ in the original formula we consider the frist summation result
+    #          as zigma_1 and the second as zigma_2 """
+    #          zigma_1 = 0
+    #          zigma_2 = 0
+     #
+    #          # if (n in range(len(img)-4,len(img))):
+    #          #     continue
+    #          for m in range(1, 5):
+    #              zigma_1 = zigma_1+coefficients[m+7]*y[row][n+m]
+    #          for m in range(1, 5):
+    #              zigma_2 = zigma_2+coefficients[3+m]*z[row][n+m]
+    #          z[row][n] = zigma_1-zigma_2
+     #
+    #  plt.imshow(z, cmap='gray', interpolation='nearest')
+    #  plt.show()
+    #  return z
 
 
 """ combining the causal and anti-causal parts to finally have the filter and
 normalizing the output"""
 
-def final_filter(sigma, causal, antiCausal):
-    y = []
-    img_length = len(causal)
-    for n in range(0, img_length):
-            y.append((causal[n] + antiCausal[n])/(sigma * np.sqrt(2 * np.pi)))
+# def final_filter(sigma, img):
+#     y = np.zeros((img.shape[0],img.shape[1]),dtype = float)
+#
+#     coeffs = coefficients(sigma)
+#     causal = causal_filter(img, coeffs)
+#     antiCausal = anti_causal_filter(img, coeffs)
+#     for n in range(0, img.shape[0]):
+#         for m in range(0, img.shape[1]):
+#             y[n][m] = (causal[n][m] + antiCausal[n][m])/(sigma * np.sqrt(2 * np.pi))
+#     return y
 
-    # as of the last part, it's time to normalize after applying the Gaussian distribution
-    max_value = max(y)
-    min_value = min(y)
-    for n in range(0, img_length):
-        y[n] = 255*(y[n]-min_value)/(max_value-min_value)
+def final_filter(sigma, img):
+    y = np.zeros((img.shape[0],img.shape[1]),dtype = float)
+    z = np.zeros((y.shape[0],y.shape[1]),dtype = float)
+    coeffs = coefficients(sigma)
 
-    return y
+    causal = causal_filter_row_based(img, coeffs)
+    antiCausal = anti_causal_filter_row_based(img, coeffs)
+    for n in range(0, img.shape[0]):
+        for m in range(0, img.shape[1]):
+            y[n][m] = (causal[n][m] + antiCausal[n][m])/(sigma * np.sqrt(2 * np.pi))
 
+    causal = causal_filter_col_based(y, coeffs)
+    antiCausal = anti_causal_filter_col_based(y, coeffs)
+    for n in range(0, y.shape[0]):
+        for m in range(0, y.shape[1]):
+            z[n][m] = (causal[n][m] + antiCausal[n][m])/(sigma * np.sqrt(2 * np.pi))
+    return z
 
-org_img = plt.imread('./resources/bauckhage.jpg')
-#org_img = plt.imread('./resources/clock.jpg')
+#    as of the last part, it's time to normalize after applying the Gaussian distribution
+# #==============================================================================
+#     max_value = max(y)
+#     min_value = min(y)
+#     for n in range(0, img_length):
+#         y[n] = 255*(y[n]-min_value)/(max_value-min_value)
+# #==============================================================================
 
-for standardDeviation in range(1,10):
-    
+for standardDeviation in range(5,6):
+
     """ experimenting the application of different valuses for parameter (sigma)
     with our approach """
-    
+
     start_time = time.time()
-    coeffs = coefficients(standardDeviation)
-    causal = causal_filter(org_img, coeffs)
-    anti_causal = anti_causal_filter(org_img, coeffs)
-    final_custom = final_filter(standardDeviation, causal, anti_causal)
+    final_custom = final_filter(standardDeviation, img)
     end_time = time.time()
     costum_average_time.append(end_time-start_time)
-    
+
     """ experimenting the application of different valuses for parameter (sigma)
     with the built-in function """
-    
+
     start_time = time.time()
     final_builtIn = gaussian_filter(org_img,standardDeviation)
     end_time = time.time()
@@ -155,7 +323,7 @@ for standardDeviation in range(1,10):
     plt.yticks([])
 
     plt.subplot(1, 2, 2)
-    plt.imshow(reshape_img(final_custom), cmap='gray', interpolation='nearest')
+    plt.imshow(final_custom, cmap='gray', interpolation='nearest')
     plt.title('Filtered image-Our version')
     plt.xticks([])
     plt.yticks([])
