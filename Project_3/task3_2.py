@@ -2,9 +2,6 @@ import numpy as np
 import scipy.ndimage as ndimage
 import matplotlib.pyplot as plt
 
-""" image warping is all about manipulating coordinates, not the intensity
-values of the images"""
-
 
 def waves_effect_warping(img, amp, x_freq, y_freq, phi, oblique):
 
@@ -20,10 +17,9 @@ def waves_effect_warping(img, amp, x_freq, y_freq, phi, oblique):
     img = np.pad(img, padding, 'constant', constant_values=0)
 
     height, width = img.shape
-    print(height, width)
+    # print(height, width)
     # getting coordinate matrices (grid) from coordinate vectors
     xx, yy = np.meshgrid(np.arange(width), np.arange(height))
-    # getting stack arrays in sequence vertically
 
     """we use pad fnction to pad the numpy array (image) with zeros wherever
     needed (as the amplitude will chain the dimension of the image)"""
@@ -37,8 +33,9 @@ def waves_effect_warping(img, amp, x_freq, y_freq, phi, oblique):
     X += C * d"""
 
     """we need to consider two cases: first the wave is applied on
-    both axes which makes it oblique or diagonal, second it is applied only
-    only towards the axes"""
+    both axes which makes it oblique or diagonal, second it is only applied
+    towards one axis"""
+    # getting stack arrays in sequence vertically (vstack)
 
     if not oblique:
         yw = amp * np.sin(2 * np.pi * xx * x_freq * 1 / width - phi)
