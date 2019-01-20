@@ -36,6 +36,8 @@ def waves_effect_warping(img, amp, x_freq, y_freq, phi, oblique):
     both axes which makes it oblique or diagonal, second it is only applied
     towards one axis"""
     # getting stack arrays in sequence vertically (vstack)
+    """ all the frequencies are devided by either width or height in order to
+        rescale the wave and make the effect visible over the dimension of the image"""
 
     if not oblique:
         yw = amp * np.sin(2 * np.pi * xx * x_freq * 1 / width - phi)
@@ -55,7 +57,7 @@ def waves_effect_warping(img, amp, x_freq, y_freq, phi, oblique):
 
 
 # initializing image
-img = plt.imread('./resources/bauckhage.jpg')
+img = plt.imread('./resources/clock.jpg')
 waves_effect_warping(img, 80, 1/2, 0, 0, 0)
 waves_effect_warping(img, 100, 1, 0, 0, 0)
 waves_effect_warping(img, 10, 2, 2, np.pi/2, 1)
