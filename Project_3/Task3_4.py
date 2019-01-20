@@ -11,7 +11,7 @@ def conversion(image,sigma):
 
     polarImg = cv2.linearPolar(newImg,(newImg.shape[0]/2, newImg.shape[1]/2), sqrt, cv2.WARP_FILL_OUTLIERS) # polar image conversion
 
-    oneDGaussian = ndImage.gaussian_filter1d(polarImg, sigma=sigma, axis=0, order=0, mode='reflect', cval=0.0,truncate=4.0) # Gaussian 1D filter
+    oneDGaussian = ndImage.gaussian_filter1d(polarImg, sigma=sigma, axis=0, order=0, mode='wrap', cval=0.0,truncate=4.0) # Gaussian 1D filter
 
     cartesianImg = cv2.linearPolar(oneDGaussian, (newImg.shape[0] / 2, newImg.shape[1] / 2), sqrt, cv2.WARP_INVERSE_MAP) # Back to cartesian system
 
